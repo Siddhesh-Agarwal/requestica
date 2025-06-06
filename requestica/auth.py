@@ -3,12 +3,14 @@ import os
 import re
 import threading
 import time
+from typing import Optional
 from urllib.parse import urlparse
 from base64 import b64encode
 
-from ._internal_utils import to_native_string
-from .cookies import extract_cookies_to_jar
-from .utils import parse_dict_header
+from requestica._internal_utils import to_native_string
+from requestica.cookies import extract_cookies_to_jar
+from requestica.models import Request, RequestMethods, Response
+from requestica.utils import parse_dict_header
 
 CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
 CONTENT_TYPE_MULTI_PART = "multipart/form-data"
@@ -41,7 +43,7 @@ class HTTPBasicAuth(AuthBase):
         self.username = username
         self.password = password
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return all(
             [
                 self.username == getattr(other, "username", None),
@@ -60,7 +62,7 @@ class HTTPBasicAuth(AuthBase):
 class HTTPProxyAuth(HTTPBasicAuth):
     """Attaches HTTP Proxy Authentication to a given Request object."""
 
-    def __call__(self, r):
+    def __call__(self, r: Request):
         r.headers["Proxy-Authorization"] = _basic_auth_str(self.username, self.password)
         return r
 
@@ -84,7 +86,7 @@ class HTTPDigestAuth(AuthBase):
             self._thread_local.pos = None
             self._thread_local.num_401_calls = None
 
-    def build_digest_header(self, method, url):
+    def build_digest_header(self, method: RequestMethods, url: str) -> Optional[str]:
         """
         :rtype: str
         """
@@ -196,12 +198,12 @@ class HTTPDigestAuth(AuthBase):
 
         return f"Digest {base}"
 
-    def handle_redirect(self, r, **kwargs):
+    def handle_redirect(self, r: Response, **kwargs):
         """Reset num_401_calls counter on redirects."""
         if r.is_redirect:
             self._thread_local.num_401_calls = 1
 
-    def handle_401(self, r, **kwargs):
+    def handle_401(self, r: Response, **kwargs):
         """
         Takes the given response and tries digest-auth, if needed.
 

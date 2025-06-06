@@ -21,22 +21,21 @@ from urllib3.util import parse_url
 from urllib3.util.retry import Retry
 from urllib3.util.ssl_ import create_urllib3_context
 
-from .auth import _basic_auth_str
-from .cookies import extract_cookies_to_jar
-from .exceptions import (
+from requestica.auth import _basic_auth_str
+from requestica.cookies import extract_cookies_to_jar
+from requestica.exceptions import (
     ConnectionError,
     InvalidHeader,
     InvalidProxyURL,
-    InvalidSchema,
     InvalidURL,
     ProxyError,
     ReadTimeout,
     RetryError,
     SSLError,
 )
-from .models import Response
-from .structures import CaseInsensitiveDict
-from .utils import (
+from requestica.models import Response
+from requestica.structures import CaseInsensitiveDict
+from requestica.utils import (
     DEFAULT_CA_BUNDLE_PATH,
     extract_zipped_paths,
     get_auth_from_url,
@@ -45,14 +44,6 @@ from .utils import (
     select_proxy,
     urldefragauth,
 )
-
-try:
-    from urllib3.contrib.socks import SOCKSProxyManager
-except ImportError:
-
-    class SOCKSProxyManager:
-        def __init__(self, *args, **kwargs):
-            raise InvalidSchema("Missing dependencies for SOCKS support.")
 
 
 if TYPE_CHECKING:
@@ -275,6 +266,8 @@ class HTTPAdapter(BaseAdapter):
         if proxy in self.proxy_manager:
             manager = self.proxy_manager[proxy]
         elif proxy.lower().startswith("socks"):
+            from urllib3.contrib.socks import SOCKSProxyManager
+
             username, password = get_auth_from_url(proxy)
             manager = self.proxy_manager[proxy] = SOCKSProxyManager(
                 proxy,

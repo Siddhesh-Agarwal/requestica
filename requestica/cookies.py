@@ -8,7 +8,7 @@ from typing import Optional
 from urllib.parse import urlparse, urlunparse
 import threading
 
-from ._internal_utils import to_native_string
+from requestica._internal_utils import to_native_string
 
 
 class MockRequest:

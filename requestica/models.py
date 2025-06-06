@@ -2,7 +2,7 @@ from collections.abc import Mapping
 import datetime
 from http.cookiejar import CookieJar
 from io import UnsupportedOperation
-from typing import Callable, Dict, List, Literal, Optional, Tuple
+from typing import Callable, Dict, Iterable, List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel
 from urllib.parse import urlencode, urlsplit, urlunparse
 from urllib3 import HTTPResponse
@@ -32,7 +32,6 @@ from requestica.exceptions import (
     ConnectionError,
     ContentDecodingError,
     HTTPError,
-    InvalidJSONError,
     InvalidURL,
     MissingSchema,
     SSLError as RequestsSSLError,
@@ -78,6 +77,10 @@ RequestMethods = Literal[
     "OPTIONS",
     "TRACE",
     "PATCH",
+]
+
+JSONValue = Union[
+    None, bool, int, float, str, List["JSONValue"], Dict[str, "JSONValue"]
 ]
 
 
@@ -354,8 +357,8 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         url: str,
         headers: Optional[Dict] = None,
         files: Optional[List[Dict]] = None,
-        data: Optional[List[Tuple] | Dict] = None,
-        params: Optional[Dict] = None,
+        data: Optional[List[Tuple] | Dict | bytes] = None,
+        params: Optional[Dict | bytes] = None,
         auth: Optional[Tuple] = None,
         cookies: Optional[Dict | RequestsCookieJar] = None,
         hooks: Optional[Dict] = None,
@@ -497,10 +500,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             # provides this natively, but Python 3 gives a Unicode string.
             content_type = "application/json"
 
-            try:
-                body = complexjson.dumps(json, allow_nan=False)
-            except ValueError as ve:
-                raise InvalidJSONError(ve, request=self)
+            body = json.dumps(json, allow_nan=False)
 
             if not isinstance(body, bytes):
                 body = body.encode("utf-8")
@@ -651,7 +651,7 @@ class Response(BaseModel):
     request: PreparedRequest
     raw: HTTPResponse
     reason: Optional[str]
-    _content: bool
+    _content: Optional[bool | bytes]
     _content_consumed: bool
     _next: Optional["Response"]
     encoding: Optional[str]
@@ -659,6 +659,7 @@ class Response(BaseModel):
     cookies: RequestsCookieJar
     elapsed: datetime.timedelta
     connection: HTTPAdapter
+    history: List["Response"]
 
     def __init__(self):
         self._content = False
@@ -789,7 +790,9 @@ class Response(BaseModel):
             # to a standard Python utf-8 str.
             return "utf-8"
 
-    def iter_content(self, chunk_size=1, decode_unicode=False):
+    def iter_content(
+        self, chunk_size: int = 1, decode_unicode: bool = False
+    ) -> Iterable[str | bytes]:
         """Iterates over the response data.  When stream=True is set on the
         request, this avoids reading the content at once into memory for
         large responses.  The chunk size is the number of bytes it should
@@ -848,7 +851,10 @@ class Response(BaseModel):
         return chunks
 
     def iter_lines(
-        self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=False, delimiter=None
+        self,
+        chunk_size: int = ITER_CHUNK_SIZE,
+        decode_unicode: bool = False,
+        delimiter=None,
     ):
         """Iterates over the response data, one line at a time.  When
         stream=True is set on the request, this avoids reading the
@@ -881,7 +887,7 @@ class Response(BaseModel):
             yield pending
 
     @property
-    def content(self):
+    def content(self) -> Optional[bytes | bool]:
         """Content of the response, in bytes."""
 
         if self._content is False:

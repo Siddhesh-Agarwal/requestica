@@ -1,7 +1,9 @@
 import codecs
+from certifi import where
 from collections.abc import Mapping
 from collections import OrderedDict
 import contextlib
+from http.cookiejar import CookieJar
 import io
 import os
 import re
@@ -10,7 +12,7 @@ import string
 import struct
 import sys
 import tempfile
-from typing import Any, Dict, Iterable, Literal, Optional
+from typing import Any, Dict, Generator, Iterable, List, Literal, Optional, Tuple
 from urllib.parse import quote, unquote, urlparse, urlunparse
 from urllib.request import getproxies, getproxies_environment, parse_http_list
 from urllib3.util import make_headers, parse_url
@@ -22,8 +24,7 @@ from requestica._internal_utils import (  # noqa: F401
     _HEADER_VALIDATORS_BYTE,
     _HEADER_VALIDATORS_STR,
 )
-from requestica.certs import where
-from requestica.cookies import cookiejar_from_dict
+from requestica.cookies import RequestsCookieJar, cookiejar_from_dict
 from requestica.exceptions import (
     InvalidHeader,
     InvalidURL,
@@ -271,7 +272,7 @@ def atomic_open(filename: str):
         raise
 
 
-def from_key_val_list(value):
+def from_key_val_list(value: Optional[Mapping[str, str] | Iterable[tuple[str, str]]]):
     """Take an object and test to see if it can be represented as a
     dictionary. Unless it can not be represented as such, return an
     OrderedDict, e.g.,
@@ -298,7 +299,7 @@ def from_key_val_list(value):
     return OrderedDict(value)
 
 
-def to_key_val_list(value):
+def to_key_val_list(value: Optional[Mapping[str, str] | Iterable[tuple[str, str]]]):
     """Take an object and test to see if it can be represented as a
     dictionary. If it can be, return a list of tuples, e.g.,
 
@@ -322,13 +323,13 @@ def to_key_val_list(value):
         raise ValueError("cannot encode objects that are not 2-tuples")
 
     if isinstance(value, Mapping):
-        value = value.items()
+        return list(value.items())
 
     return list(value)
 
 
 # From mitsuhiko/werkzeug (used with permission).
-def parse_list_header(value):
+def parse_list_header(value: str):
     """Parse lists as described by RFC 2068 Section 2.
 
     In particular, parse comma-separated lists where the elements of
@@ -351,7 +352,7 @@ def parse_list_header(value):
     :return: :class:`list`
     :rtype: list
     """
-    result = []
+    result: list[str] = []
     for item in parse_http_list(value):
         if item[:1] == item[-1:] == '"':
             item = unquote_header_value(item[1:-1])
@@ -360,7 +361,7 @@ def parse_list_header(value):
 
 
 # From mitsuhiko/werkzeug (used with permission).
-def parse_dict_header(value):
+def parse_dict_header(value: str):
     """Parse lists of key, value pairs as described by RFC 2068 Section 2 and
     convert them into a python dict:
 
@@ -382,7 +383,7 @@ def parse_dict_header(value):
     :return: :class:`dict`
     :rtype: dict
     """
-    result = {}
+    result: Dict[str, str | None] = {}
     for item in parse_http_list(value):
         if "=" not in item:
             result[item] = None
@@ -395,7 +396,7 @@ def parse_dict_header(value):
 
 
 # From mitsuhiko/werkzeug (used with permission).
-def unquote_header_value(value, is_filename=False):
+def unquote_header_value(value: str, is_filename: bool = False) -> str:
     r"""Unquotes a header value.  (Reversal of :func:`quote_header_value`).
     This does not use the real unquoting but what browsers are actually
     using for quoting.
@@ -420,7 +421,7 @@ def unquote_header_value(value, is_filename=False):
     return value
 
 
-def dict_from_cookiejar(cj):
+def dict_from_cookiejar(cj: CookieJar) -> Dict[str, str | None]:
     """Returns a key/value dictionary from a CookieJar.
 
     :param cj: CookieJar object to extract cookies from.
@@ -431,7 +432,9 @@ def dict_from_cookiejar(cj):
     return cookie_dict
 
 
-def add_dict_to_cookiejar(cj, cookie_dict):
+def add_dict_to_cookiejar(
+    cj: RequestsCookieJar, cookie_dict: Dict[str, str]
+) -> RequestsCookieJar:
     """Returns a CookieJar from a key/value dictionary.
 
     :param cj: CookieJar to insert cookies into.
@@ -451,7 +454,7 @@ def _parse_content_type_header(header: str):
 
     tokens = header.split(";")
     content_type, params = tokens[0].strip(), tokens[1:]
-    params_dict = {}
+    params_dict: Dict[str, str | Literal[True]] = {}
     items_to_strip = "\"' "
 
     for param in params:
@@ -480,7 +483,7 @@ def get_encoding_from_headers(headers: Mapping) -> Optional[str]:
 
     content_type, params = _parse_content_type_header(content_type)
 
-    if "charset" in params:
+    if "charset" in params and isinstance(params["charset"], str):
         return params["charset"].strip("'\"")
 
     if "text" in content_type:
@@ -508,7 +511,7 @@ def stream_decode_response_unicode(iterator: Iterable, r: Response) -> Iterable[
         yield rv
 
 
-def iter_slices(string: str, slice_length: Optional[int]):
+def iter_slices(string: str, slice_length: Optional[int]) -> Generator[str, Any, None]:
     """Iterate over slices of a string."""
     pos = 0
     if slice_length is None or slice_length <= 0:
@@ -522,7 +525,7 @@ def iter_slices(string: str, slice_length: Optional[int]):
 UNRESERVED_SET = frozenset(string.ascii_letters + string.digits + "-._~")
 
 
-def unquote_unreserved(uri):
+def unquote_unreserved(uri: str) -> str:
     """Un-escape any percent-escape sequences in a URI that are unreserved
     characters. This leaves all reserved, illegal and non-ASCII bytes encoded.
 
@@ -546,7 +549,7 @@ def unquote_unreserved(uri):
     return "".join(parts)
 
 
-def requote_uri(uri: str):
+def requote_uri(uri: str) -> str:
     """Re-quote the given URI.
 
     This function passes the given URI through an unquote/quote cycle to
@@ -594,7 +597,7 @@ def dotted_netmask(mask: int) -> str:
     return socket.inet_ntoa(struct.pack(">I", bits))
 
 
-def is_ipv4_address(string_ip: str):
+def is_ipv4_address(string_ip: str) -> bool:
     """
     :rtype: bool
     """
@@ -605,7 +608,7 @@ def is_ipv4_address(string_ip: str):
     return True
 
 
-def is_valid_cidr(string_network: str):
+def is_valid_cidr(string_network: str) -> bool:
     """
     Very simple check of the cidr format in no_proxy variable.
 
@@ -630,7 +633,7 @@ def is_valid_cidr(string_network: str):
 
 
 @contextlib.contextmanager
-def set_environ(env_name: str, value: str):
+def set_environ(env_name: str, value: str) -> Generator[None, Any, None]:
     """Set the environment variable 'env_name' to 'value'
 
     Save previous value, yield, and then restore the previous value stored in
@@ -648,7 +651,7 @@ def set_environ(env_name: str, value: str):
         yield
 
 
-def should_bypass_proxies(url: str, no_proxy):
+def should_bypass_proxies(url: str, no_proxy) -> bool:
     """
     Returns whether we should bypass proxies or not.
 
@@ -709,7 +712,7 @@ def should_bypass_proxies(url: str, no_proxy):
     return False
 
 
-def get_environ_proxies(url, no_proxy=None):
+def get_environ_proxies(url: str, no_proxy=None) -> dict[str, str]:
     """
     Return a dict of environment proxies.
 
@@ -720,7 +723,7 @@ def get_environ_proxies(url, no_proxy=None):
     return getproxies()
 
 
-def select_proxy(url: str, proxies: Dict[str, str] | None):
+def select_proxy(url: str, proxies: Optional[Dict[str, str]]) -> Optional[str]:
     """Select a proxy for the url, if applicable.
 
     :param url: The url being for the request
@@ -746,7 +749,9 @@ def select_proxy(url: str, proxies: Dict[str, str] | None):
     return proxy
 
 
-def resolve_proxies(request: PreparedRequest, proxies: dict, trust_env: bool = True):
+def resolve_proxies(
+    request: PreparedRequest, proxies: Dict[str, str], trust_env: bool = True
+):
     """This method takes proxy information from a request and configuration
     input to resolve a mapping of target proxies. This will consider settings
     such as NO_PROXY to strip proxy configurations.
@@ -773,7 +778,7 @@ def resolve_proxies(request: PreparedRequest, proxies: dict, trust_env: bool = T
     return new_proxies
 
 
-def default_user_agent(name: str = "python-requestica"):
+def default_user_agent(name: str = "python-requestica") -> str:
     """
     Return a string representing the default user agent.
 
@@ -782,7 +787,7 @@ def default_user_agent(name: str = "python-requestica"):
     return f"{name}/{__version__}"
 
 
-def default_headers():
+def default_headers() -> CaseInsensitiveDict:
     """
     :rtype: requests.structures.CaseInsensitiveDict
     """
@@ -796,7 +801,7 @@ def default_headers():
     )
 
 
-def parse_header_links(value: str):
+def parse_header_links(value: str) -> List[Dict[str, str]]:
     """Return a list of parsed link headers proxies.
 
     i.e. Link: <http:/.../front.jpeg>; rel=front; type="image/jpeg",<http://.../back.jpeg>; rel=back;type="image/jpeg"
@@ -804,10 +809,8 @@ def parse_header_links(value: str):
     :rtype: list
     """
 
-    links = []
-
+    links: List[Dict[str, str]] = []
     replace_chars = " '\""
-
     value = value.strip(replace_chars)
     if not value:
         return links
@@ -818,7 +821,7 @@ def parse_header_links(value: str):
         except ValueError:
             url, params = val, ""
 
-        link = {"url": url.strip("<> '\"")}
+        link: Dict[str, str] = {"url": url.strip("<> '\"")}
 
         for param in params.split(";"):
             try:
@@ -839,7 +842,7 @@ _null2 = _null * 2
 _null3 = _null * 3
 
 
-def guess_json_utf(data: bytes) -> str | None:
+def guess_json_utf(data: bytes) -> Optional[str]:
     """
     :rtype: str
     """
@@ -913,7 +916,7 @@ def get_auth_from_url(url: str) -> tuple[str, str]:
     return ("", "")
 
 
-def check_header_validity(header: tuple):
+def check_header_validity(header: Tuple[str | bytes, str | bytes]):
     """Verifies that header parts don't contain leading whitespace
     reserved characters, or return characters.
 

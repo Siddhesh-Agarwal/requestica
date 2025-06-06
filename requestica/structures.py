@@ -1,6 +1,6 @@
 from collections import OrderedDict, _odict_values
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 
 class CaseInsensitiveDict(MutableMapping):
@@ -31,7 +31,7 @@ class CaseInsensitiveDict(MutableMapping):
     """
 
     def __init__(self, data: Optional[_odict_values | Mapping] = None, **kwargs):
-        self._store = OrderedDict()
+        self._store: OrderedDict[str, Tuple[str, Any]] = OrderedDict()
         if data is None:
             data = {}
         self.update(data, **kwargs)
@@ -57,18 +57,18 @@ class CaseInsensitiveDict(MutableMapping):
         """Like iteritems(), but with all lowercase keys."""
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, Mapping):
-            return NotImplemented
+            raise NotImplementedError(f"Operation not supported for {type(other)}")
         other = CaseInsensitiveDict(other)
         # Compare insensitively
         return dict(self.lower_items()) == dict(other.lower_items())
 
     # Copy is required
-    def copy(self):
+    def copy(self) -> "CaseInsensitiveDict":
         return CaseInsensitiveDict(self._store.values())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(dict(self.items()))
 
 

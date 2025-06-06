@@ -1,1 +1,5 @@
+__title__ = "requests"
+__description__ = "Request with Pydantic"
 __version__ = "0.1.0"
+__author__ = "Siddhesh Agarwal"
+__author_email__ = "me@kennethreitz.org"

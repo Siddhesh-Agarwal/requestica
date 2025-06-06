@@ -13,15 +13,17 @@ HEADER_VALIDATORS = {
 }
 
 
-def to_native_string(string, encoding: str = "ascii"):
+def to_native_string(string: str | bytes, encoding: str = "ascii"):
     """Given a string object, regardless of type, returns a representation of
     that string in the native string type, encoding and decoding where
     necessary. This assumes ASCII unless told otherwise.
     """
     if isinstance(string, str):
         out = string
-    else:
+    elif isinstance(string, bytes):
         out = string.decode(encoding)
+    else:
+        raise ValueError(f"Invalid string type: {type(string)}")
 
     return out
 

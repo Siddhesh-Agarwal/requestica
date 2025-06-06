@@ -16,10 +16,6 @@ class RequesticaException(IOError):
         super().__init__(*args, **kwargs)
 
 
-class InvalidJSONError(RequesticaException):
-    """A JSON error occurred."""
-
-
 class HTTPError(RequesticaException):
     """An HTTP error occurred."""
 
@@ -39,16 +35,8 @@ class SSLError(ConnectionError):
 class Timeout(RequesticaException):
     """The request timed out.
 
-    Catching this error will catch both
-    :exc:`~requests.exceptions.ConnectTimeout` and
-    :exc:`~requests.exceptions.ReadTimeout` errors.
-    """
-
-
-class ConnectTimeout(ConnectionError, Timeout):
-    """The request timed out while trying to connect to the remote server.
-
-    Requests that produced this error are safe to retry.
+    Catching this error will catch
+    :exc:`ReadTimeout` errors.
     """
 
 
@@ -56,24 +44,42 @@ class ReadTimeout(Timeout):
     """The server did not send any data in the allotted amount of time."""
 
 
-class URLRequired(RequesticaException):
+class URLException(RequesticaException):
+    """The URL is problematic
+
+    catching this error will catch:
+    :exc:`URLRequired` errors.
+    :exc:`InvalidURL` errors.
+    """
+
+
+class URLRequired(URLException):
     """A valid URL is required to make a request."""
+
+
+class InvalidURL(URLException, ValueError):
+    """The URL provided was somehow invalid."""
 
 
 class TooManyRedirects(RequesticaException):
     """Too many redirects."""
 
 
-class MissingSchema(RequesticaException, ValueError):
+class SchemaException(URLException):
+    """The schema is problematic
+
+    catching this error will catch:
+    :exc:`MissingSchema` errors.
+    :exc:`InvalidSchema` errors.
+    """
+
+
+class MissingSchema(SchemaException, ValueError):
     """The URL scheme (e.g. http or https) is missing."""
 
 
-class InvalidSchema(RequesticaException, ValueError):
+class InvalidSchema(SchemaException, ValueError):
     """The URL scheme provided is either invalid or unsupported."""
-
-
-class InvalidURL(RequesticaException, ValueError):
-    """The URL provided was somehow invalid."""
 
 
 class InvalidHeader(RequesticaException, ValueError):

@@ -466,7 +466,7 @@ class Session(SessionRedirectMixin):
         data: Optional[Dict | List[Tuple] | bytes] = None,
         json: Optional[Dict] = None,
         headers: Optional[Dict] = None,
-        cookies: Optional[Dict | cookiejar.CookieJar] = None,
+        cookies: Optional[Dict | RequestsCookieJar] = None,
         files: Optional[List[Dict]] = None,
         auth: Optional[Tuple] = None,
         timeout: Optional[float] = None,
@@ -639,7 +639,7 @@ class Session(SessionRedirectMixin):
                 pass
 
         if not stream:
-            r.content
+            return r.content
 
         return r
 

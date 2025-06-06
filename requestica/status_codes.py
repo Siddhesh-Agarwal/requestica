@@ -1,3 +1,4 @@
+# credit: https://github.com/encode/starlette/blob/master/starlette/status.py
 """
 HTTP codes
 See HTTP Status Code Registry:
@@ -5,8 +6,6 @@ https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 
 And RFC 2324 - https://tools.ietf.org/html/rfc2324
 """
-
-from __future__ import annotations
 
 HTTP_100_CONTINUE = 100
 HTTP_101_SWITCHING_PROTOCOLS = 101

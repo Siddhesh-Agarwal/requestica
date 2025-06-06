@@ -1,5 +1,6 @@
-from requestica.models import RequestMethods
-from .sessions import Session
+from typing import Any, Dict, List, Optional, Tuple
+from requestica.models import JSONValue, RequestMethods
+from requestica.sessions import Session
 
 
 def request(method: RequestMethods, url: str, **kwargs):
@@ -50,7 +51,7 @@ def request(method: RequestMethods, url: str, **kwargs):
         return session.request(method=method, url=url, **kwargs)
 
 
-def get(url, params=None, **kwargs):
+def get(url: str, params: Optional[Dict[str, Any]] = None, **kwargs):
     r"""Sends a GET request.
 
     :param url: URL for the new :class:`Request` object.
@@ -64,7 +65,7 @@ def get(url, params=None, **kwargs):
     return request("GET", url, params=params, **kwargs)
 
 
-def options(url, **kwargs):
+def options(url: str, **kwargs):
     r"""Sends an OPTIONS request.
 
     :param url: URL for the new :class:`Request` object.
@@ -76,7 +77,7 @@ def options(url, **kwargs):
     return request("OPTIONS", url, **kwargs)
 
 
-def head(url, **kwargs):
+def head(url: str, **kwargs):
     r"""Sends a HEAD request.
 
     :param url: URL for the new :class:`Request` object.
@@ -91,7 +92,12 @@ def head(url, **kwargs):
     return request("HEAD", url, **kwargs)
 
 
-def post(url, data=None, json=None, **kwargs):
+def post(
+    url: str,
+    data: Optional[Dict[str, Any] | List[Tuple] | bytes] = None,
+    json: Optional[JSONValue] = None,
+    **kwargs,
+):
     r"""Sends a POST request.
 
     :param url: URL for the new :class:`Request` object.
@@ -106,7 +112,12 @@ def post(url, data=None, json=None, **kwargs):
     return request("POST", url, data=data, json=json, **kwargs)
 
 
-def put(url, data=None, **kwargs):
+def put(
+    url: str,
+    data: Optional[Dict[str, Any] | List[Tuple] | bytes] = None,
+    json: Optional[JSONValue] = None,
+    **kwargs,
+):
     r"""Sends a PUT request.
 
     :param url: URL for the new :class:`Request` object.
@@ -118,10 +129,15 @@ def put(url, data=None, **kwargs):
     :rtype: requests.Response
     """
 
-    return request("PUT", url, data=data, **kwargs)
+    return request("PUT", url, data=data, json=json, **kwargs)
 
 
-def patch(url, data=None, **kwargs):
+def patch(
+    url: str,
+    data: Optional[Dict[str, Any] | List[Tuple] | bytes] = None,
+    json: Optional[JSONValue] = None,
+    **kwargs,
+):
     r"""Sends a PATCH request.
 
     :param url: URL for the new :class:`Request` object.
@@ -133,10 +149,10 @@ def patch(url, data=None, **kwargs):
     :rtype: requests.Response
     """
 
-    return request("PATCH", url, data=data, **kwargs)
+    return request("PATCH", url, data=data, json=json, **kwargs)
 
 
-def delete(url, **kwargs):
+def delete(url: str, **kwargs):
     r"""Sends a DELETE request.
 
     :param url: URL for the new :class:`Request` object.

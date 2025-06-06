@@ -1,5 +1,4 @@
 import importlib
-import sys
 
 
 def _resolve_char_detection():
@@ -15,6 +14,3 @@ def _resolve_char_detection():
 
 
 chardet = _resolve_char_detection()
-
-
-_ver = sys.version_info
