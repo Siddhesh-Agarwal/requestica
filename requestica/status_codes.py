@@ -1,104 +1,95 @@
-from .structures import LookupDict
+"""
+HTTP codes
+See HTTP Status Code Registry:
+https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
 
-_codes = {
-    # Informational.
-    100: ("continue",),
-    101: ("switching_protocols",),
-    102: ("processing", "early-hints"),
-    103: ("checkpoint",),
-    122: ("uri_too_long", "request_uri_too_long"),
-    200: ("ok", "okay", "all_ok", "all_okay", "all_good", "\\o/", "✓"),
-    201: ("created",),
-    202: ("accepted",),
-    203: ("non_authoritative_info", "non_authoritative_information"),
-    204: ("no_content",),
-    205: ("reset_content", "reset"),
-    206: ("partial_content", "partial"),
-    207: ("multi_status", "multiple_status", "multi_stati", "multiple_stati"),
-    208: ("already_reported",),
-    226: ("im_used",),
-    # Redirection.
-    300: ("multiple_choices",),
-    301: ("moved_permanently", "moved", "\\o-"),
-    302: ("found",),
-    303: ("see_other", "other"),
-    304: ("not_modified",),
-    305: ("use_proxy",),
-    306: ("switch_proxy",),
-    307: ("temporary_redirect", "temporary_moved", "temporary"),
-    308: ("permanent_redirect",),
-    # Client Error.
-    400: ("bad_request", "bad"),
-    401: ("unauthorized",),
-    402: ("payment_required", "payment"),
-    403: ("forbidden",),
-    404: ("not_found", "-o-"),
-    405: ("method_not_allowed", "not_allowed"),
-    406: ("not_acceptable",),
-    407: ("proxy_authentication_required", "proxy_auth", "proxy_authentication"),
-    408: ("request_timeout", "timeout"),
-    409: ("conflict",),
-    410: ("gone",),
-    411: ("length_required",),
-    412: ("precondition_failed", "precondition"),
-    413: ("request_entity_too_large", "content_too_large"),
-    414: ("request_uri_too_large", "uri_too_long"),
-    415: ("unsupported_media_type", "unsupported_media", "media_type"),
-    416: (
-        "requested_range_not_satisfiable",
-        "requested_range",
-        "range_not_satisfiable",
-    ),
-    417: ("expectation_failed",),
-    418: ("im_a_teapot", "teapot", "i_am_a_teapot"),
-    421: ("misdirected_request",),
-    422: ("unprocessable_entity", "unprocessable", "unprocessable_content"),
-    423: ("locked",),
-    424: ("failed_dependency", "dependency"),
-    425: ("unordered_collection", "unordered", "too_early"),
-    426: ("upgrade_required", "upgrade"),
-    428: ("precondition_required", "precondition"),
-    429: ("too_many_requests", "too_many"),
-    431: ("header_fields_too_large", "fields_too_large"),
-    444: ("no_response", "none"),
-    449: ("retry_with", "retry"),
-    450: ("blocked_by_windows_parental_controls", "parental_controls"),
-    451: ("unavailable_for_legal_reasons", "legal_reasons"),
-    499: ("client_closed_request",),
-    # Server Error.
-    500: ("internal_server_error", "server_error", "/o\\", "✗"),
-    501: ("not_implemented",),
-    502: ("bad_gateway",),
-    503: ("service_unavailable", "unavailable"),
-    504: ("gateway_timeout",),
-    505: ("http_version_not_supported", "http_version"),
-    506: ("variant_also_negotiates",),
-    507: ("insufficient_storage",),
-    509: ("bandwidth_limit_exceeded", "bandwidth"),
-    510: ("not_extended",),
-    511: ("network_authentication_required", "network_auth", "network_authentication"),
-}
+And RFC 2324 - https://tools.ietf.org/html/rfc2324
+"""
 
-codes = LookupDict(name="status_codes")
+from __future__ import annotations
+
+HTTP_100_CONTINUE = 100
+HTTP_101_SWITCHING_PROTOCOLS = 101
+HTTP_102_PROCESSING = 102
+HTTP_103_EARLY_HINTS = 103
+HTTP_200_OK = 200
+HTTP_201_CREATED = 201
+HTTP_202_ACCEPTED = 202
+HTTP_203_NON_AUTHORITATIVE_INFORMATION = 203
+HTTP_204_NO_CONTENT = 204
+HTTP_205_RESET_CONTENT = 205
+HTTP_206_PARTIAL_CONTENT = 206
+HTTP_207_MULTI_STATUS = 207
+HTTP_208_ALREADY_REPORTED = 208
+HTTP_226_IM_USED = 226
+HTTP_300_MULTIPLE_CHOICES = 300
+HTTP_301_MOVED_PERMANENTLY = 301
+HTTP_302_FOUND = 302
+HTTP_303_SEE_OTHER = 303
+HTTP_304_NOT_MODIFIED = 304
+HTTP_305_USE_PROXY = 305
+HTTP_306_RESERVED = 306
+HTTP_307_TEMPORARY_REDIRECT = 307
+HTTP_308_PERMANENT_REDIRECT = 308
+HTTP_400_BAD_REQUEST = 400
+HTTP_401_UNAUTHORIZED = 401
+HTTP_402_PAYMENT_REQUIRED = 402
+HTTP_403_FORBIDDEN = 403
+HTTP_404_NOT_FOUND = 404
+HTTP_405_METHOD_NOT_ALLOWED = 405
+HTTP_406_NOT_ACCEPTABLE = 406
+HTTP_407_PROXY_AUTHENTICATION_REQUIRED = 407
+HTTP_408_REQUEST_TIMEOUT = 408
+HTTP_409_CONFLICT = 409
+HTTP_410_GONE = 410
+HTTP_411_LENGTH_REQUIRED = 411
+HTTP_412_PRECONDITION_FAILED = 412
+HTTP_413_REQUEST_ENTITY_TOO_LARGE = 413
+HTTP_414_REQUEST_URI_TOO_LONG = 414
+HTTP_415_UNSUPPORTED_MEDIA_TYPE = 415
+HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE = 416
+HTTP_417_EXPECTATION_FAILED = 417
+HTTP_418_IM_A_TEAPOT = 418
+HTTP_421_MISDIRECTED_REQUEST = 421
+HTTP_422_UNPROCESSABLE_ENTITY = 422
+HTTP_423_LOCKED = 423
+HTTP_424_FAILED_DEPENDENCY = 424
+HTTP_425_TOO_EARLY = 425
+HTTP_426_UPGRADE_REQUIRED = 426
+HTTP_428_PRECONDITION_REQUIRED = 428
+HTTP_429_TOO_MANY_REQUESTS = 429
+HTTP_431_REQUEST_HEADER_FIELDS_TOO_LARGE = 431
+HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS = 451
+HTTP_500_INTERNAL_SERVER_ERROR = 500
+HTTP_501_NOT_IMPLEMENTED = 501
+HTTP_502_BAD_GATEWAY = 502
+HTTP_503_SERVICE_UNAVAILABLE = 503
+HTTP_504_GATEWAY_TIMEOUT = 504
+HTTP_505_HTTP_VERSION_NOT_SUPPORTED = 505
+HTTP_506_VARIANT_ALSO_NEGOTIATES = 506
+HTTP_507_INSUFFICIENT_STORAGE = 507
+HTTP_508_LOOP_DETECTED = 508
+HTTP_510_NOT_EXTENDED = 510
+HTTP_511_NETWORK_AUTHENTICATION_REQUIRED = 511
 
 
-def _init():
-    for code, titles in _codes.items():
-        for title in titles:
-            setattr(codes, title, code)
-            if not title.startswith(("\\", "/")):
-                setattr(codes, title.upper(), code)
-
-    def doc(code):
-        names = ", ".join(f"``{n}``" for n in _codes[code])
-        return "* %d: %s" % (code, names)
-
-    global __doc__
-    __doc__ = (
-        __doc__ + "\n" + "\n".join(doc(code) for code in sorted(_codes))
-        if __doc__ is not None
-        else None
-    )
-
-
-_init()
+"""
+WebSocket codes
+https://www.iana.org/assignments/websocket/websocket.xml#close-code-number
+https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+"""
+WS_1000_NORMAL_CLOSURE = 1000
+WS_1001_GOING_AWAY = 1001
+WS_1002_PROTOCOL_ERROR = 1002
+WS_1003_UNSUPPORTED_DATA = 1003
+WS_1005_NO_STATUS_RCVD = 1005
+WS_1006_ABNORMAL_CLOSURE = 1006
+WS_1007_INVALID_FRAME_PAYLOAD_DATA = 1007
+WS_1008_POLICY_VIOLATION = 1008
+WS_1009_MESSAGE_TOO_BIG = 1009
+WS_1010_MANDATORY_EXT = 1010
+WS_1011_INTERNAL_ERROR = 1011
+WS_1012_SERVICE_RESTART = 1012
+WS_1013_TRY_AGAIN_LATER = 1013
+WS_1014_BAD_GATEWAY = 1014
+WS_1015_TLS_HANDSHAKE = 1015

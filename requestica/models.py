@@ -16,17 +16,17 @@ from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 from urllib3.util import parse_url
 
-from requestica.adapters import HTTPAdapter
 
-from ._internal_utils import to_native_string, unicode_is_ascii
-from .auth import HTTPBasicAuth
-from .cookies import (
+from requestica._internal_utils import to_native_string, unicode_is_ascii
+from requestica.adapters import HTTPAdapter
+from requestica.auth import HTTPBasicAuth
+from requestica.cookies import (
     RequestsCookieJar,
     _copy_cookie_jar,
     cookiejar_from_dict,
     get_cookie_header,
 )
-from .exceptions import (
+from requestica.exceptions import (
     ChunkedEncodingError,
     ConnectionError,
     ContentDecodingError,
@@ -37,10 +37,10 @@ from .exceptions import (
     SSLError as RequestsSSLError,
     StreamConsumedError,
 )
-from .hooks import default_hooks
-from .status_codes import codes
-from .structures import CaseInsensitiveDict
-from .utils import (
+from requestica.hooks import default_hooks
+import requestica.status_codes as codes
+from requestica.structures import CaseInsensitiveDict
+from requestica.utils import (
     check_header_validity,
     get_auth_from_url,
     guess_filename,
@@ -56,11 +56,11 @@ from .utils import (
 #: The set of HTTP status codes that indicate an automatically
 #: processable redirect.
 REDIRECT_STATI = (
-    codes["moved"],  # 301
-    codes["found"],  # 302
-    codes["other"],  # 303
-    codes["temporary_redirect"],  # 307
-    codes["permanent_redirect"],  # 308
+    codes.HTTP_301_MOVED_PERMANENTLY,
+    codes.HTTP_302_FOUND,
+    codes.HTTP_303_SEE_OTHER,
+    codes.HTTP_307_TEMPORARY_REDIRECT,
+    codes.HTTP_308_PERMANENT_REDIRECT,
 )
 
 DEFAULT_REDIRECT_LIMIT = 30
@@ -767,8 +767,8 @@ class Response(BaseModel):
     def is_permanent_redirect(self):
         """True if this Response one of the permanent versions of redirect."""
         return "location" in self.headers and self.status_code in (
-            codes["moved_permanently"],
-            codes["permanent_redirect"],
+            codes.HTTP_301_MOVED_PERMANENTLY,
+            codes.HTTP_308_PERMANENT_REDIRECT,
         )
 
     @property

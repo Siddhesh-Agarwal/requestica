@@ -22,9 +22,15 @@ from requestica.exceptions import (
     InvalidSchema,
     TooManyRedirects,
 )
-from requestica.hooks import default_hooks
-from requestica.models import DEFAULT_REDIRECT_LIMIT, PreparedRequest, Request, Response
-from requestica.status_codes import codes
+from requestica.hooks import default_hooks, dispatch_hook
+from requestica.models import (
+    DEFAULT_REDIRECT_LIMIT,
+    PreparedRequest,
+    Request,
+    RequestMethods,
+    Response,
+)
+import requestica.status_codes as codes
 from requestica.structures import CaseInsensitiveDict
 from requestica.utils import (
     DEFAULT_PORTS,
@@ -44,12 +50,14 @@ if sys.platform == "win32":
 else:
     preferred_clock = time.time
 
+T = TypeVar("T")
+
 
 def merge_setting(
-    request_setting: Optional[dict],
-    session_setting: Optional[dict],
-    dict_class: type = OrderedDict,
-):
+    request_setting: Optional[T],
+    session_setting: Optional[T],
+    dict_class: Type = OrderedDict,
+) -> Optional[T]:
     """Determines appropriate setting for a given request, taking into account
     the explicit setting on that request, and the setting in the session. If a
     setting is a dictionary, they will be merged together using `dict_class`
@@ -221,8 +229,8 @@ class SessionRedirectMixin(BaseModel):
 
             # https://github.com/psf/requests/issues/1084
             if resp.status_code not in (
-                codes["temporary_redirect"],
-                codes["permanent_redirect"],
+                codes.HTTP_307_TEMPORARY_REDIRECT,
+                codes.HTTP_308_PERMANENT_REDIRECT,
             ):
                 # https://github.com/psf/requests/issues/3490
                 purged_headers = ("Content-Length", "Content-Type", "Transfer-Encoding")
@@ -341,17 +349,17 @@ class SessionRedirectMixin(BaseModel):
         method = prepared_request.method
 
         # https://tools.ietf.org/html/rfc7231#section-6.4.4
-        if response.status_code == codes["see_other"] and method != "HEAD":
+        if response.status_code == codes.HTTP_303_SEE_OTHER and method != "HEAD":
             method = "GET"
 
         # Do what the browsers do, despite standards...
         # First, turn 302s into GETs.
-        if response.status_code == codes["found"] and method != "HEAD":
+        if response.status_code == codes.HTTP_302_FOUND and method != "HEAD":
             method = "GET"
 
         # Second, if a POST is responded to with a 301, turn it into a GET.
         # This bizarre behaviour is explained in Issue 1704.
-        if response.status_code == codes["moved"] and method == "POST":
+        if response.status_code == codes.HTTP_301_MOVED_PERMANENTLY and method == "POST":
             method = "GET"
 
         prepared_request.method = method
