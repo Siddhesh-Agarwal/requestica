@@ -1,7 +1,8 @@
 from collections.abc import Mapping
 import datetime
+from http.cookiejar import CookieJar
 from io import UnsupportedOperation
-from typing import Callable, Literal, Optional
+from typing import Callable, Dict, List, Literal, Optional, Tuple
 from pydantic import BaseModel
 from urllib.parse import urlencode, urlsplit, urlunparse
 from urllib3 import HTTPResponse
@@ -203,7 +204,7 @@ class RequestEncodingMixin(BaseModel):
 
 
 class RequestHooksMixin(BaseModel):
-    hooks: dict
+    hooks: Dict
 
     def register_hook(self, event: Literal["response", "request"], hook: Callable):
         """Properly register a hook."""
@@ -263,18 +264,20 @@ class Request(RequestHooksMixin):
         self,
         method: RequestMethods,
         url: str,
-        headers: Optional[dict] = None,
-        files: Optional[list[dict]] = None,
-        data: Optional[list[dict]] = None,
-        params: Optional[dict] = None,
-        auth: Optional[tuple] = None,
-        cookies: Optional[dict] = None,
-        hooks: Optional[dict] = None,
+        headers: Optional[Dict] = None,
+        files: Optional[List[Dict]] = None,
+        data: Optional[Dict | List[Tuple] | bytes] = None,
+        json: Optional[Dict] = None,
+        params: Optional[Dict | bytes] = None,
+        auth: Optional[Tuple] = None,
+        cookies: Optional[Dict | RequestsCookieJar] = None,
+        hooks: Optional[Dict] = None,
     ):
         # Default empty dicts for dict params.
-        data = [] if data is None else data
-        files = [] if files is None else files
         headers = {} if headers is None else headers
+        files = [] if files is None else files
+        data = [] if data is None else data
+        json = {} if json is None else json
         params = {} if params is None else params
         hooks = {} if hooks is None else hooks
 
@@ -349,21 +352,21 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         self,
         method: RequestMethods,
         url: str,
-        headers: Optional[dict] = None,
-        files: Optional[list[dict]] = None,
-        data: Optional[list[dict]] = None,
-        params: Optional[dict] = None,
-        auth: Optional[tuple] = None,
-        cookies: Optional[dict] = None,
-        hooks: Optional[dict] = None,
-        json: Optional[dict] = None,
+        headers: Optional[Dict] = None,
+        files: Optional[List[Dict]] = None,
+        data: Optional[List[Tuple] | Dict] = None,
+        params: Optional[Dict] = None,
+        auth: Optional[Tuple] = None,
+        cookies: Optional[Dict | RequestsCookieJar] = None,
+        hooks: Optional[Dict] = None,
+        json: Optional[Dict] = None,
     ):
         """Prepares the entire request with the given parameters."""
 
         self.prepare_method(method)
         self.prepare_url(url, params)
         self.prepare_headers(headers)
-        self.prepare_cookies(cookies)
+        self.prepare_cookies(cookies or {})
         self.prepare_body(data, files, json)
         self.prepare_auth(auth, url)
 
@@ -403,7 +406,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             raise UnicodeError
         return host
 
-    def prepare_url(self, url: str, params: Optional[dict | str | bytes] = None):
+    def prepare_url(self, url: str, params: Optional[Dict | str | bytes] = None):
         """Prepares the given HTTP URL."""
 
         # Remove leading whitespaces from url
@@ -468,7 +471,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         url = requote_uri(urlunparse([scheme, netloc, path, None, query, fragment]))
         self.url = url
 
-    def prepare_headers(self, headers: Optional[dict] = None):
+    def prepare_headers(self, headers: Optional[Dict] = None):
         """Prepares the given HTTP headers."""
 
         self.headers = CaseInsensitiveDict()
@@ -505,7 +508,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         is_stream = all(
             [
                 hasattr(data, "__iter__"),
-                not isinstance(data, (str, list, tuple, Mapping)),
+                not isinstance(data, (str, list, Tuple, Mapping)),
             ]
         )
 
@@ -595,7 +598,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             # Recompute Content-Length
             self.prepare_content_length(self.body)
 
-    def prepare_cookies(self, cookies):
+    def prepare_cookies(self, cookies: Dict | RequestsCookieJar):
         """Prepares the given HTTP cookie data.
 
         This function eventually generates a ``Cookie`` header from the
@@ -606,7 +609,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         to ``prepare_cookies`` will have no actual effect, unless the "Cookie"
         header is removed beforehand.
         """
-        if isinstance(cookies, cookielib.CookieJar):
+        if isinstance(cookies, CookieJar):
             self._cookies = cookies
         else:
             self._cookies = cookiejar_from_dict(cookies)

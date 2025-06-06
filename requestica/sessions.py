@@ -5,7 +5,7 @@ from http import cookiejar
 import os
 import sys
 import time
-from typing import Optional
+from typing import Dict, List, Optional, Tuple, Type, TypeVar
 from urllib.parse import urljoin, urlparse
 from requestica._internal_utils import to_native_string
 from requestica.adapters import HTTPAdapter
@@ -246,7 +246,7 @@ class SessionRedirectMixin(BaseModel):
             # request, use the old one that we haven't yet touched.
             extract_cookies_to_jar(prepared_request._cookies, req, resp.raw)
             merge_cookies(prepared_request._cookies, self.cookies)
-            prepared_request.prepare_cookies(prepared_request._cookies)
+            prepared_request.prepare_cookies(prepared_request._cookies or {})
 
             # Rebuild auth and proxy information.
             proxies = self.rebuild_proxies(prepared_request, proxies)
@@ -359,7 +359,10 @@ class SessionRedirectMixin(BaseModel):
 
         # Second, if a POST is responded to with a 301, turn it into a GET.
         # This bizarre behaviour is explained in Issue 1704.
-        if response.status_code == codes.HTTP_301_MOVED_PERMANENTLY and method == "POST":
+        if (
+            response.status_code == codes.HTTP_301_MOVED_PERMANENTLY
+            and method == "POST"
+        ):
             method = "GET"
 
         prepared_request.method = method
@@ -379,20 +382,22 @@ class SessionRedirectMixin(BaseModel):
 
 
 class Session(SessionRedirectMixin):
-    # __attrs__ = [
-    #     "headers",
-    #     "cookies",
-    #     "auth",
-    #     "proxies",
-    #     "hooks",
-    #     "params",
-    #     "verify",
-    #     "cert",
-    #     "adapters",
-    #     "stream",
-    #     "trust_env",
-    #     "max_redirects",
-    # ]
+    __attrs__ = [
+        "headers",
+        "cookies",
+        "auth",
+        "proxies",
+        "hooks",
+        "params",
+        "verify",
+        "cert",
+        "adapters",
+        "stream",
+        "trust_env",
+        "max_redirects",
+    ]
+
+    params: Optional[dict | bytes]
 
     def __init__(self):
         self.headers = default_headers()
@@ -455,22 +460,22 @@ class Session(SessionRedirectMixin):
 
     def request(
         self,
-        method,
-        url,
-        params=None,
-        data=None,
-        headers=None,
-        cookies=None,
-        files=None,
-        auth=None,
-        timeout=None,
-        allow_redirects=True,
-        proxies=None,
-        hooks=None,
-        stream=None,
-        verify=None,
-        cert=None,
-        json=None,
+        method: RequestMethods,
+        url: str,
+        params: Optional[Dict] | bytes = None,
+        data: Optional[Dict | List[Tuple] | bytes] = None,
+        json: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        cookies: Optional[Dict | cookiejar.CookieJar] = None,
+        files: Optional[List[Dict]] = None,
+        auth: Optional[Tuple] = None,
+        timeout: Optional[float] = None,
+        allow_redirects: bool = True,
+        proxies: Optional[Dict] = None,
+        hooks: Optional[Dict] = None,
+        stream: bool = False,
+        verify: bool = True,
+        cert: Optional[str | Tuple[str, str]] = None,
     ):
         """Constructs a :class:`Request <Request>`, prepares it and sends it.
         Returns :class:`Response <Response>` object.
@@ -517,12 +522,13 @@ class Session(SessionRedirectMixin):
         """
         # Create the Request.
         req = Request(
-            method=method.upper(),
+            method=method,
             url=url,
             headers=headers,
+            json=json,
             files=files,
-            data=data or {},
-            params=params or {},
+            data=data,
+            params=params,
             auth=auth,
             cookies=cookies,
             hooks=hooks,

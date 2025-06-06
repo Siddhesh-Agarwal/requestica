@@ -1,5 +1,6 @@
 import codecs
 from collections.abc import Mapping
+from collections import OrderedDict
 import contextlib
 import io
 import os
@@ -12,30 +13,24 @@ import tempfile
 from typing import Any, Dict, Iterable, Literal, Optional
 from urllib.parse import quote, unquote, urlparse, urlunparse
 from urllib.request import getproxies, getproxies_environment, parse_http_list
-import warnings
-import zipfile
-from collections import OrderedDict
-
 from urllib3.util import make_headers, parse_url
+import zipfile
 
-from requestica.models import PreparedRequest, Response
 
-from .__version__ import __version__
-
-# to_native_string is unused here, but imported here for backwards compatibility
-from ._internal_utils import (  # noqa: F401
+from requestica.__version__ import __version__
+from requestica._internal_utils import (  # noqa: F401
     _HEADER_VALIDATORS_BYTE,
     _HEADER_VALIDATORS_STR,
 )
-from .certs import where
-from .cookies import cookiejar_from_dict
+from requestica.certs import where
+from requestica.cookies import cookiejar_from_dict
 from requestica.exceptions import (
-    FileModeWarning,
     InvalidHeader,
     InvalidURL,
     UnrewindableBodyError,
 )
-from .structures import CaseInsensitiveDict
+from requestica.models import PreparedRequest, Response
+from requestica.structures import CaseInsensitiveDict
 
 NETRC_FILES = (".netrc", "_netrc")
 

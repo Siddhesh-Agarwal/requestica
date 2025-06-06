@@ -537,7 +537,7 @@ def cookiejar_from_dict(
 
 
 def merge_cookies(
-    cookiejar: RequestsCookieJar, cookies: dict | CookieJar
+    cookiejar: Optional[RequestsCookieJar], cookies: dict | CookieJar
 ) -> RequestsCookieJar:
     """Add cookies to cookiejar and returns a merged CookieJar.
 
